@@ -1,0 +1,35 @@
+[
+    {
+      "headers": {
+        "host": "yourn8nnamehere.app.n8n.cloud",
+        "user-agent": "ElevenLabs/1.0",
+        "content-length": "38",
+        "accept": "*/*",
+        "accept-encoding": "gzip, br",
+        "cdn-loop": "cloudflare; loops=1; subreqs=1",
+        "cf-connecting-ip": "34.59.11.47",
+        "cf-ew-via": "15",
+        "cf-ipcountry": "US",
+        "cf-ray": "9f12229237-ORD",
+        "cf-visitor": "{\"scheme\":\"https\"}",
+        "cf-worker": "n8n.cloud",
+        "content-type": "application/json",
+        "x-forwarded-for": "34.55.11.47, 172.72.240.101",
+        "x-forwarded-host": "yourn8nnamehere.app.n8n.cloud",
+        "x-forwarded-port": "443",
+        "x-forwarded-proto": "https",
+        "x-forwarded-server": "traefik-prod-users-gwc-60-5476b-657q7",
+        "x-is-trusted": "yes",
+        "x-real-ip": "32.59.19.47"
+      },
+      "params": {},
+      "query": {
+        "tool_name": "check_calendar"
+      },
+      "body": {
+        "requested_time": "2026-04-25T14:00"
+      },
+      "webhookUrl": "https://yourn8nnamehere.app.n8n.cloud/webhook/elevenlabs-gcal-booking",
+      "executionMode": "production"
+    }
+  ]
