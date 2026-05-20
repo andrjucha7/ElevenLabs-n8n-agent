@@ -9,7 +9,6 @@ This repository provides the configuration, workflow templates, and guidelines n
 - **Real-Time Workflow Execution:** Voice agents trigger n8n workflows via secure webhooks instantly, delivering sub-second response times.
 - **Dynamic Context Management:** Maintain conversation state and pass rich, real-time data back to ElevenLabs to personalize responses.
 - **Extensive App Connectivity:** Seamlessly bridge ElevenLabs with over 1,000+ pre-built n8n nodes (Google Workspace, Slack, HubSpot, PostgreSQL, etc.).
-- **Seamless Human Handoff:** Build escalating workflows that notify human agents (via Slack/Email) when the AI encounters a complex scenario.
 
 ---
 
