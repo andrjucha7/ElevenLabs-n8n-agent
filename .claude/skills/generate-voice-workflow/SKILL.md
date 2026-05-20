@@ -40,14 +40,14 @@ Extract the following from the user's idea. Ask for what's missing in **one sing
 ## Phase 2 — Select Templates
 
 ### ElevenLabs Template Selection
-Read all files in `vorlagen/` and `plattform-guides/elevenlabs.md`.
+Read all files in `prompt-templates/` and `plattform-guides/elevenlabs.md`.
 
 | Use Case | Template File |
 |---|---|
-| Appointment booking | `vorlagen/terminbuchung.md` |
-| Inbound FAQ / general info | `vorlagen/inbound-faq.md` |
-| Outbound lead generation | `vorlagen/outbound-leadgen.md` |
-| Customer service / support | `vorlagen/kundenservice.md` |
+| Appointment booking | `prompt-templates/appointment-booking.md` |
+| Inbound FAQ / general info | `prompt-templates/inbound-faq.md` |
+| Outbound lead generation | `prompt-templates/outbound-lead-generation.md` |
+| Customer service / support | `prompt-templates/customer-service.md` |
 | Other | Build from scratch using structure in `plattform-guides/elevenlabs.md` |
 
 ### n8n Template Selection

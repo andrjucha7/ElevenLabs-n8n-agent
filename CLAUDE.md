@@ -18,7 +18,7 @@ The two outputs are designed to work together: the ElevenLabs agent calls the n8
 
 ```
 CLAUDE.md                          — This file. Project instructions.
-.mcp.json                          — MCP server config (n8n-mcp, elevenlabs).
+mcp-config.json                    — MCP server config (n8n-mcp, elevenlabs); env-var placeholders only.
 .claude/skills/
   generate-voice-workflow/         — MAIN SKILL: one-shot idea → both outputs
   deploy-template/                 — Deploy an n8n template to the n8n instance
@@ -34,11 +34,11 @@ n8n-input-examples/                — Sample webhook payloads for testing
 output-workflows/                  — Exported/generated workflow JSONs
 output-prompts/                    — Generated ElevenLabs voice agent prompts
 plattform-guides/elevenlabs.md     — ElevenLabs conventions (structure, tools, tone)
-vorlagen/                          — ElevenLabs prompt templates by use case
-  terminbuchung.md                 — Appointment booking
+prompt-templates/                  — ElevenLabs prompt templates by use case
+  appointment-booking.md           — Appointment booking
   inbound-faq.md                   — Inbound FAQ / general info
-  outbound-leadgen.md              — Outbound lead generation
-  kundenservice.md                 — Customer service
+  outbound-lead-generation.md        — Outbound lead generation
+  customer-service.md              — Customer service
 ```
 
 ---
@@ -58,10 +58,10 @@ vorlagen/                          — ElevenLabs prompt templates by use case
 
 | User Idea Keywords | ElevenLabs Template | n8n Template |
 |---|---|---|
-| appointment, booking, calendar, setter | `terminbuchung.md` | `appointment-setter-google-cal.json` |
+| appointment, booking, calendar, setter | `appointment-booking.md` | `appointment-setter-google-cal.json` |
 | FAQ, info, questions, hours, prices | `inbound-faq.md` | (webhook + response node) |
-| lead gen, outbound, cold call, sales | `outbound-leadgen.md` | (webhook + CRM node) |
-| customer service, support, complaints | `kundenservice.md` | (webhook + ticketing) |
+| lead gen, outbound, cold call, sales | `outbound-lead-generation.md` | (webhook + CRM node) |
+| customer service, support, complaints | `customer-service.md` | (webhook + ticketing) |
 
 ---
 
@@ -101,7 +101,22 @@ The webhook URL from the deployed n8n workflow is the endpoint the ElevenLabs ag
 
 ## MCP Integration
 
-Two MCP servers are configured in `.mcp.json` and provide complementary automation:
+Two MCP servers are configured in `mcp-config.json` (n8n-mcp and elevenlabs) and provide complementary automation.
+
+### Configuration & Secrets
+
+- **MCP routing** lives in `mcp-config.json` at the repo root. It defines server URLs and header shapes only — no plaintext secrets.
+- **All sensitive values** (`N8N_MCP_TOKEN`, `ELEVENLABS_API_KEY`, etc.) are injected from your local `.env` file via `${VAR}` placeholders. Copy `.env.example` → `.env` and fill in real values.
+- **Never hardcode secrets** in scripts, skills, or tracked files. Never commit `.env` to version control.
+
+### Dual-key architecture (n8n)
+
+| Variable | Used by | Purpose |
+|---|---|---|
+| `N8N_MCP_TOKEN` | Claude / MCP (`n8n-mcp`) | Real-time workflow create/update/deploy during agent sessions |
+| `N8N_API_KEY` | Developer `core/scripts/sync.py` (`npm run sync`) | REST API access to download workflow JSON into the repo for version control |
+
+These are **different credentials** with different scopes. The MCP token powers AI execution; the REST API key powers repository maintenance only.
 
 ### n8n-mcp
 
@@ -111,7 +126,7 @@ Exposes tools for creating, updating, and managing n8n workflows:
 - `mcp__n8n-mcp__n8n_update_partial_workflow` — surgical edits post-deploy
 - `mcp__n8n-mcp__n8n_get_workflow` — read a deployed workflow
 
-Configure `.mcp.json` with your n8n instance URL and API key before deploying.
+Set `N8N_MCP_URL` and `N8N_MCP_TOKEN` in `.env` before deploying via MCP.
 
 ### elevenlabs-mcp
 
@@ -134,7 +149,7 @@ Exposes tools for creating, configuring, and managing ElevenLabs conversational 
 **Knowledge & Context:**
 - `mcp__elevenlabs__add_knowledge_base_to_agent` — attach a knowledge base to an agent
 
-Configure `.mcp.json` with your `ELEVENLABS_API_KEY`. Output files are written to `output-prompts/` for version control.
+Set `ELEVENLABS_API_KEY` in `.env`. Output files are written to `output-prompts/` for version control.
 
 **Key benefit**: Instead of manually copying prompts into the ElevenLabs Dashboard, `/generate-voice-workflow` can now deploy the agent directly via MCP — making the entire setup one-shot.
 

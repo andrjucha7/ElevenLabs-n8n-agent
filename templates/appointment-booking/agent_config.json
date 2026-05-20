@@ -1,0 +1,37 @@
+{
+  "name": "[COMPANY_NAME] Appointment Assistant",
+  "model": "gpt-4-turbo",
+  "voice": {
+    "voiceId": "[VOICE_ID_FROM_ELEVENLABS]",
+    "stability": 0.75,
+    "similarityBoost": 0.85
+  },
+  "temperature": 0.7,
+  "maxTokens": 1024,
+  "webhook": {
+    "url": "[N8N_WEBHOOK_URL]",
+    "authHeader": "[ADD_CUSTOM_AUTH_HEADER_IF_NEEDED]"
+  },
+  "tools": [
+    {
+      "name": "check_calendar",
+      "description": "Check availability in the calendar for a requested time slot",
+      "parameters": {
+        "requested_time": "ISO 8601 datetime string"
+      }
+    },
+    {
+      "name": "book_calendar",
+      "description": "Book an appointment in the calendar",
+      "parameters": {
+        "requested_time": "ISO 8601 datetime string",
+        "caller_name": "String",
+        "caller_email": "String (optional)"
+      }
+    },
+    {
+      "name": "hangup",
+      "description": "End the call gracefully"
+    }
+  ]
+}

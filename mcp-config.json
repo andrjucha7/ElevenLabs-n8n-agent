@@ -2,16 +2,16 @@
   "mcpServers": {
     "n8n-mcp": {
       "type": "http",
-      "url": "your-server-url",
+      "url": "${N8N_MCP_URL}",
       "headers": {
-        "Authorization": "Bearer your-oauth-token"
+        "Authorization": "Bearer ${N8N_MCP_TOKEN}"
       } 
     },
     "elevenlabs": {
       "command": "uvx",
       "args": ["elevenlabs-mcp"],
       "env": {
-        "ELEVENLABS_API_KEY": "your-elevenlabs-api-key"
+        "ELEVENLABS_API_KEY": "${ELEVENLABS_API_KEY}"
       }
     } 
   }

@@ -1,0 +1,526 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "elevenlabs-gcal-booking",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "elevenlabs-gcal-booking"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a0000001-0001-4000-8000-000000000001",
+              "name": "current_time",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "a0000001-0001-4000-8000-000000000002",
+              "name": "requested_time",
+              "value": "={{ $json.body.requested_time }}",
+              "type": "string"
+            },
+            {
+              "id": "a0000001-0001-4000-8000-000000000003",
+              "name": "caller_name",
+              "value": "={{ $json.body.caller_name || 'Guest' }}",
+              "type": "string"
+            },
+            {
+              "id": "a0000001-0001-4000-8000-000000000004",
+              "name": "caller_email",
+              "value": "={{ $json.body.caller_email || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000002",
+      "name": "Set Main",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c0000001-0001-4000-8000-000000000001",
+                    "leftValue": "={{ $('Webhook').item.json.query.tool_name }}",
+                    "rightValue": "check_calendar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "check_calendar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c0000001-0001-4000-8000-000000000002",
+                    "leftValue": "={{ $('Webhook').item.json.query.tool_name }}",
+                    "rightValue": "book_calendar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "book_calendar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000003",
+      "name": "Route by Tool",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "placeholder@gmail.com",
+          "mode": "list",
+          "cachedResultName": "placeholder@gmail.com"
+        },
+        "timeMin": "={{ $json.requested_time }}",
+        "timeMax": "={{ $json.requested_time.toDateTime().plus(1, 'week') }}",
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000004",
+      "name": "Get Events for Week",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        -208
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "G4q2IMepxRlWc1mc",
+          "name": "Google Calendar account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d0000001-0001-4000-8000-000000000001",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000005",
+      "name": "Any Busy Slots?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        -208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============ CONFIGURATION ============\nconst APPOINTMENT_LENGTH_MINUTES = 30;\nconst DAY_START_TIME = \"08:00\";\nconst DAY_END_TIME = \"17:00\";\nconst SLOT_INCREMENT_MINUTES = 30;\nconst DAYS_TO_LOOK_AHEAD = 7;\n// ========================================\n\nconst busyEvents = $input.all();\nconst setMainData = $('Set Main').first().json;\nconst currentTime = DateTime.fromISO(setMainData.current_time);\nconst requestedTime = DateTime.fromISO(setMainData.requested_time);\n\nconst today = currentTime.startOf('day');\nconst requestedDay = requestedTime.startOf('day');\nconst requestedDateStr = requestedDay.toFormat('yyyy-MM-dd');\n\nfunction getDatePhrase(targetDate, today) {\n  const daysDifference = Math.round(targetDate.startOf('day').diff(today, 'days').days);\n  if (daysDifference === 0) return 'today';\n  if (daysDifference === 1) return 'tomorrow';\n  if (daysDifference >= 2 && daysDifference <= 7) return `this coming ${targetDate.toFormat('EEEE')}`;\n  return targetDate.toFormat('EEEE, MMMM d');\n}\n\nfunction isDateBlockedByAllDay(dateToCheck, busyEvents) {\n  return busyEvents.some(item => {\n    const event = item.json;\n    if (event.start && event.start.date && event.end && event.end.date) {\n      const eventStartDate = DateTime.fromISO(event.start.date);\n      const eventEndDate = DateTime.fromISO(event.end.date);\n      return dateToCheck >= eventStartDate && dateToCheck < eventEndDate;\n    }\n    return false;\n  });\n}\n\nfunction getBusySlotsForDate(dateStr, busyEvents) {\n  return busyEvents\n    .map(item => item.json)\n    .filter(event => {\n      if (!event.start || !event.start.dateTime) return false;\n      const eventStart = DateTime.fromISO(event.start.dateTime);\n      return eventStart.toFormat('yyyy-MM-dd') === dateStr;\n    })\n    .map(event => ({\n      start: DateTime.fromISO(event.start.dateTime),\n      end: DateTime.fromISO(event.end.dateTime)\n    }))\n    .sort((a, b) => a.start.toMillis() - b.start.toMillis());\n}\n\nfunction isSlotBusy(slot, busySlots) {\n  return busySlots.some(busy => slot.start < busy.end && slot.end > busy.start);\n}\n\nfunction getAvailableSlotsForDate(dateStr, busyEvents, currentTime) {\n  const dayStart = DateTime.fromISO(`${dateStr}T${DAY_START_TIME}:00`);\n  const dayEnd = DateTime.fromISO(`${dateStr}T${DAY_END_TIME}:00`);\n  const busySlots = getBusySlotsForDate(dateStr, busyEvents);\n  const availableSlots = [];\n  let slotStart = dayStart;\n  while (slotStart.plus({ minutes: APPOINTMENT_LENGTH_MINUTES }) <= dayEnd) {\n    const slot = {\n      start: slotStart,\n      end: slotStart.plus({ minutes: APPOINTMENT_LENGTH_MINUTES }),\n      time: slotStart.toFormat('HH:mm')\n    };\n    if (slot.start >= currentTime && !isSlotBusy(slot, busySlots)) {\n      availableSlots.push(slot.time);\n    }\n    slotStart = slotStart.plus({ minutes: SLOT_INCREMENT_MINUTES });\n  }\n  return availableSlots;\n}\n\nfunction formatTimeSlotsMessage(slots) {\n  if (slots.length === 1) return slots[0];\n  const timesForMessage = [...slots];\n  const lastSlot = timesForMessage.pop();\n  return `${timesForMessage.join(', ')}, and ${lastSlot}`;\n}\n\nconst requestedDatePhrase = getDatePhrase(requestedDay, today);\nlet requestedDaySlots = [];\nlet requestedDayBlocked = false;\n\nif (isDateBlockedByAllDay(requestedDay, busyEvents)) {\n  requestedDayBlocked = true;\n} else {\n  requestedDaySlots = getAvailableSlotsForDate(requestedDateStr, busyEvents, currentTime);\n}\n\nconst requestedDayHasSlots = requestedDaySlots.length > 0;\n\nconst weekAvailability = [];\nfor (let i = 0; i < DAYS_TO_LOOK_AHEAD; i++) {\n  const checkDate = today.plus({ days: i });\n  const checkDateStr = checkDate.toFormat('yyyy-MM-dd');\n  if (isDateBlockedByAllDay(checkDate, busyEvents)) {\n    weekAvailability.push({ date: checkDateStr, datePhrase: getDatePhrase(checkDate, today), dayName: checkDate.toFormat('EEEE'), slots: [], blockedByAllDayEvent: true });\n  } else {\n    const slots = getAvailableSlotsForDate(checkDateStr, busyEvents, currentTime);\n    weekAvailability.push({ date: checkDateStr, datePhrase: getDatePhrase(checkDate, today), dayName: checkDate.toFormat('EEEE'), slots: slots, blockedByAllDayEvent: false });\n  }\n}\n\nconst firstAvailableDay = weekAvailability.find(day => day.slots.length > 0);\nconst totalSlotsInWeek = weekAvailability.reduce((sum, day) => sum + day.slots.length, 0);\n\nlet message = '';\nlet returnedSlots = [];\nlet returnedDate = null;\nlet returnedDatePhrase = null;\nlet wasRequestedDayAvailable = false;\n\nif (requestedDayHasSlots) {\n  wasRequestedDayAvailable = true;\n  returnedSlots = requestedDaySlots;\n  returnedDate = requestedDateStr;\n  returnedDatePhrase = requestedDatePhrase;\n  message = `Available appointment times for ${requestedDatePhrase}: ${formatTimeSlotsMessage(requestedDaySlots)}`;\n} else if (firstAvailableDay) {\n  wasRequestedDayAvailable = false;\n  returnedSlots = firstAvailableDay.slots;\n  returnedDate = firstAvailableDay.date;\n  returnedDatePhrase = firstAvailableDay.datePhrase;\n  message = `Unfortunately, we couldn't find any available times for ${requestedDatePhrase}. However, here are the available appointment times for ${firstAvailableDay.datePhrase}: ${formatTimeSlotsMessage(firstAvailableDay.slots)}`;\n} else {\n  wasRequestedDayAvailable = false;\n  message = `Unfortunately, we couldn't find any available times for ${requestedDatePhrase}, and there are no available appointment times in the next ${DAYS_TO_LOOK_AHEAD} days. All days are fully booked.`;\n}\n\nreturn [{\n  json: {\n    message: message,\n    availableSlots: returnedSlots,\n    returnedDate: returnedDate,\n    returnedDatePhrase: returnedDatePhrase,\n    requestedDate: requestedDateStr,\n    requestedDatePhrase: requestedDatePhrase,\n    wasRequestedDayAvailable: wasRequestedDayAvailable,\n    totalSlotsFound: returnedSlots.length,\n    totalSlotsInWeek: totalSlotsInWeek,\n    weekAvailability: weekAvailability,\n    searchStartDate: today.toFormat('yyyy-MM-dd'),\n    daysSearched: DAYS_TO_LOOK_AHEAD\n  }\n}];"
+      },
+      "id": "b1000001-0001-4000-8000-000000000006",
+      "name": "Compute Free Slots",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=RULE:\nAt most ever give back the user 3 slots that match their request the best.\nHere are the {{ $json.message }}",
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000007",
+      "name": "Respond - Available Slots",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1200,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=The whole day was free, give three slots to the user that match their request the best, at 30min intervals",
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000008",
+      "name": "Respond - Day Is Free",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1008,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=Checking availability failed. Do not give random slots. Tell the caller that the booking system is currently experiencing issues and ask them to try again shortly or leave their details for a callback.",
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000009",
+      "name": "Respond - Check Failed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "primary"
+        },
+        "timeMin": "={{ $json.requested_time.toDateTime() }}",
+        "timeMax": "={{ $json.requested_time.toDateTime().plus(30, 'minutes') }}",
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000010",
+      "name": "Check Slot Available",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        208
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "G4q2IMepxRlWc1mc",
+          "name": "Google Calendar account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d0000001-0001-4000-8000-000000000002",
+              "leftValue": "={{ $json.available }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000011",
+      "name": "Is Slot Free?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list",
+          "cachedResultName": "primary"
+        },
+        "start": "={{ $('Set Main').item.json.requested_time.toDateTime() }}",
+        "end": "={{ $('Set Main').item.json.requested_time.toDateTime().plus(30, 'minutes') }}",
+        "additionalFields": {
+          "conferenceDataUi": {
+            "conferenceDataValues": {
+              "conferenceSolution": "hangoutsMeet"
+            }
+          },
+          "description": "=Appointment booked via ElevenLabs voice agent for {{ $('Set Main').item.json.caller_name }}. Email: {{ $('Set Main').item.json.caller_email }}",
+          "showMeAs": "opaque",
+          "summary": "=Appointment - {{ $('Set Main').item.json.caller_name }}"
+        }
+      },
+      "id": "b1000001-0001-4000-8000-000000000012",
+      "name": "Book Appointment",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1008,
+        112
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "G4q2IMepxRlWc1mc",
+          "name": "Google Calendar account 2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=Booking was successful! The appointment has been confirmed for {{ $('Set Main').item.json.requested_time }}. A Google Meet link has been included in the calendar invite.",
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000013",
+      "name": "Respond - Booking Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1200,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=Booking failed. That time slot is not available. Please ask the caller to choose a different time or use the check_calendar tool to see available slots.",
+        "options": {}
+      },
+      "id": "b1000001-0001-4000-8000-000000000014",
+      "name": "Respond - Booking Failed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1200,
+        304
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Main": {
+      "main": [
+        [
+          {
+            "node": "Route by Tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Tool": {
+      "main": [
+        [
+          {
+            "node": "Get Events for Week",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Slot Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Events for Week": {
+      "main": [
+        [
+          {
+            "node": "Any Busy Slots?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Check Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Busy Slots?": {
+      "main": [
+        [
+          {
+            "node": "Compute Free Slots",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Day Is Free",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Free Slots": {
+      "main": [
+        [
+          {
+            "node": "Respond - Available Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Slot Available": {
+      "main": [
+        [
+          {
+            "node": "Is Slot Free?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Booking Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Slot Free?": {
+      "main": [
+        [
+          {
+            "node": "Book Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Booking Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book Appointment": {
+      "main": [
+        [
+          {
+            "node": "Respond - Booking Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Booking Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "fc3ea58ad4cde5e5e30328d0a0f0d5c4ecc1539ac37676f2c546bfa7b23e36d7"
+  }
+}

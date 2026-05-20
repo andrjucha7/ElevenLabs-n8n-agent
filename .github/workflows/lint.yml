@@ -1,0 +1,88 @@
+name: Lint & Validate
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate-json:
+    runs-on: ubuntu-latest
+    name: Validate JSON Files
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Validate workflow JSONs
+        run: |
+          for file in $(find . -name 'workflow.json' -type f); do
+            echo "Validating $file..."
+            python3 -m json.tool "$file" > /dev/null || exit 1
+          done
+          echo "✓ All workflow.json files are valid"
+
+      - name: Validate agent configs
+        run: |
+          for file in $(find . -name 'agent_config.json' -type f); do
+            echo "Validating $file..."
+            python3 -m json.tool "$file" > /dev/null || exit 1
+          done
+          echo "✓ All agent_config.json files are valid"
+
+  check-structure:
+    runs-on: ubuntu-latest
+    name: Check Template Structure
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify customer-support template
+        run: |
+          if [ ! -f "templates/customer-support/workflow.json" ]; then
+            echo "✗ Missing templates/customer-support/workflow.json"
+            exit 1
+          fi
+          if [ ! -f "templates/customer-support/README.md" ]; then
+            echo "✗ Missing templates/customer-support/README.md"
+            exit 1
+          fi
+          echo "✓ customer-support template structure valid"
+
+      - name: Verify core scripts
+        run: |
+          if [ ! -f "core/scripts/sync.py" ]; then
+            echo "✗ Missing core/scripts/sync.py"
+            exit 1
+          fi
+          echo "✓ core/scripts structure valid"
+
+  no-secrets:
+    runs-on: ubuntu-latest
+    name: Check for Exposed Secrets
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan for API keys in JSON
+        run: |
+          # Check workflow.json files for real API keys (basic check)
+          if grep -r "sk_live_" templates/ 2>/dev/null; then
+            echo "✗ Found potential live API keys in templates"
+            exit 1
+          fi
+          # Credentials are OK if they are credential ID references
+          echo "✓ No exposed live API keys detected"
+
+      - name: Verify credential files are ignored
+        run: |
+          if git ls-files | grep -E 'credentials|config.*secret' | grep -v template; then
+            echo "✗ Credential files should not be committed"
+            exit 1
+          fi
+          echo "✓ Credential files properly ignored"

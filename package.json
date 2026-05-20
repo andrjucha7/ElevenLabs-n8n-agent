@@ -1,0 +1,27 @@
+{
+  "name": "voiceops-boilerplate",
+  "version": "1.0.0",
+  "description": "VoiceOps Boilerplate: ElevenLabs + n8n Integration Framework",
+  "author": "VoiceOps Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andrjucha7/va-n8n"
+  },
+  "scripts": {
+    "sync": "python3 core/scripts/sync.py",
+    "sync:workflow": "python3 core/scripts/sync.py --n8n-id",
+    "sync:agent": "python3 core/scripts/sync.py --el-id",
+    "deps": "pip install -r requirements.txt",
+    "lint:workflows": "find . -name 'workflow.json' -exec python3 -m json.tool {} + > /dev/null && echo 'All workflows valid JSON'",
+    "lint:configs": "find . -name 'agent_config.json' -exec python3 -m json.tool {} + > /dev/null && echo 'All configs valid JSON'"
+  },
+  "keywords": [
+    "elevenlabs",
+    "voiceai",
+    "n8n",
+    "automation",
+    "voice-agents",
+    "webhooks"
+  ]
+}
