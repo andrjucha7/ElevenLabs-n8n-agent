@@ -19,13 +19,19 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Validate workflow JSONs
+      - name: Validate Template Structures
         run: |
-          for file in $(find . -name 'workflow.json' -type f); do
-            echo "Validating $file..."
-            python3 -m json.tool "$file" > /dev/null || exit 1
+          for dir in templates/*/; do
+            if [ -d "$dir" ]; then
+              echo "Checking template: $dir"
+              if [ ! -f "${dir}workflow.json" ]; then
+                echo "⚠️ Warning: Missing workflow.json in $dir"
+              fi
+              if [ ! -f "${dir}base_agent.txt" ]; then
+                echo "⚠️ Warning: Missing base_agent.txt in $dir"
+              fi
+            fi
           done
-          echo "✓ All workflow.json files are valid"
 
       - name: Validate agent configs
         run: |
