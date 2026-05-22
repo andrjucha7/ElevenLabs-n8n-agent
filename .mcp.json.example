@@ -4,16 +4,20 @@
       "command": "uvx",
       "args": ["elevenlabs-mcp"],
       "env": {
-        "ELEVENLABS_API_KEY": "INSERT_KEY_MANUALLY_DO_NOT_COMMIT",
+        "ELEVENLABS_API_KEY": "INSERT_KEY_MANUALLY",
         "ELEVENLABS_MCP_OUTPUT_MODE": "resources"
       }
     },
     "n8n": {
-      "command": "npx",
-      "args": ["@n8n/mcp-server"],
+    "command": "npx",
+      "args": [
+        "-p", "n8n-mcp", 
+        "-p", "zod", 
+        "n8n-mcp"
+      ],
       "env": {
-        "N8N_HOST": "INSERT_N8N_URL_MANUALLY",
-        "N8N_API_KEY": "INSERT_N8N_KEY_MANUALLY_DO_NOT_COMMIT"
+        "N8N_SERVER_URL": "INSERT_N8N_URL_MANUALLY",
+        "N8N_ACCESS_TOKEN": "INSERT_N8N_KEY_MANUALLY"
       }
     }
   }
