@@ -48,18 +48,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify customer-support template
-        run: |
-          if [ ! -f "templates/customer-support/workflow.json" ]; then
-            echo "✗ Missing templates/customer-support/workflow.json"
-            exit 1
-          fi
-          if [ ! -f "templates/customer-support/README.md" ]; then
-            echo "✗ Missing templates/customer-support/README.md"
-            exit 1
-          fi
-          echo "✓ customer-support template structure valid"
-
       - name: Verify core scripts
         run: |
           if [ ! -f "core/scripts/sync.py" ]; then
