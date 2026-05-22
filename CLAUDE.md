@@ -18,7 +18,8 @@ The two outputs are designed to work together: the ElevenLabs agent calls the n8
 
 ```
 CLAUDE.md                          — This file. Project instructions.
-mcp-config.json                    — MCP server config (n8n-mcp, elevenlabs); env-var placeholders only.
+.mcp.json.example                  — Safe MCP config scaffold with dummy values; tracked in git.
+.mcp.json                          — Runtime MCP config with real keys; gitignored AND claudeignored (AI must never read it).
 .claude/skills/
   generate-voice-workflow/         — MAIN SKILL: one-shot idea → both outputs
   deploy-template/                 — Deploy an n8n template to the n8n instance
@@ -96,41 +97,48 @@ The webhook URL from the deployed n8n workflow is the endpoint the ElevenLabs ag
 - **ElevenLabs prompts are always complete and directly usable** — every conversation path ends with `hangup`.
 - **Output language** — match the user's language. If the user writes in English, generate the ElevenLabs prompt in English. German templates are the base; adapt to user's language.
 - **Save outputs** to `output-prompts/[company]-[usecase].md` and `output-workflows/` respectively.
+- **MCP Security Protocol** — Never read, print, or inspect `.mcp.json`. Assume MCP tools are configured and available. If a tool call fails, ask the operator to verify their `.mcp.json` values.
 
 ---
 
 ## MCP Integration
 
-Two MCP servers are configured in `mcp-config.json` (n8n-mcp and elevenlabs) and provide complementary automation.
+Two MCP servers are configured via `.mcp.json` (n8n and ElevenLabs) and provide complementary automation.
 
 ### Configuration & Secrets
 
-- **MCP routing** lives in `mcp-config.json` at the repo root. It defines server URLs and header shapes only — no plaintext secrets.
-- **All sensitive values** (`N8N_MCP_TOKEN`, `ELEVENLABS_API_KEY`, etc.) are injected from your local `.env` file via `${VAR}` placeholders. Copy `.env.example` → `.env` and fill in real values.
-- **Never hardcode secrets** in scripts, skills, or tracked files. Never commit `.env` to version control.
+- **MCP routing** lives in `.mcp.json` at the repo root (runtime file, gitignored and claudeignored). It holds the real API keys and URLs for the MCP servers.
+- **Safe scaffold**: `.mcp.json.example` is tracked in git and contains only dummy placeholder values. Operator flow: copy `.mcp.json.example` → `.mcp.json`, then fill in real values manually — never commit `.mcp.json`.
+- **Never hardcode secrets** in scripts, skills, or tracked files. Never commit `.mcp.json` to version control.
+
+### MCP Security Protocol
+
+- **AI must never attempt to read `.mcp.json`** — it is claudeignored. The AI must assume MCP tools are properly configured and available.
+- If an MCP tool call fails, report the error and ask the operator to verify their `.mcp.json` values — do not try to inspect the file.
+- Never suggest reading, printing, or echoing `.mcp.json` contents.
 
 ### Dual-key architecture (n8n)
 
 | Variable | Used by | Purpose |
 |---|---|---|
-| `N8N_MCP_TOKEN` | Claude / MCP (`n8n-mcp`) | Real-time workflow create/update/deploy during agent sessions |
-| `N8N_API_KEY` | Developer `core/scripts/sync.py` (`npm run sync`) | REST API access to download workflow JSON into the repo for version control |
+| `N8N_API_KEY` (in `.mcp.json`) | Claude / MCP (`n8n`) | Real-time workflow create/update/deploy during agent sessions |
+| `N8N_API_KEY` (in scripts) | Developer `core/scripts/sync.py` (`npm run sync`) | REST API access to download workflow JSON into the repo for version control |
 
-These are **different credentials** with different scopes. The MCP token powers AI execution; the REST API key powers repository maintenance only.
+Both uses share the same key type but may be scoped differently. The `.mcp.json` key powers AI execution; the script key powers repository maintenance only.
 
-### n8n-mcp
+### n8n MCP server
 
-Exposes tools for creating, updating, and managing n8n workflows:
+Exposes tools for creating, updating, and managing n8n workflows (server name: `n8n` in `.mcp.json`):
 
-- `mcp__n8n-mcp__n8n_create_workflow` — deploy a workflow
-- `mcp__n8n-mcp__n8n_update_partial_workflow` — surgical edits post-deploy
-- `mcp__n8n-mcp__n8n_get_workflow` — read a deployed workflow
+- `mcp__claude_ai_n8n__create_workflow_from_code` — deploy a workflow
+- `mcp__claude_ai_n8n__update_workflow` — update an existing workflow
+- `mcp__claude_ai_n8n__get_workflow_details` — read a deployed workflow
 
-Set `N8N_MCP_URL` and `N8N_MCP_TOKEN` in `.env` before deploying via MCP.
+Set `N8N_HOST` and `N8N_API_KEY` in `.mcp.json` (copy from `.mcp.json.example`) before deploying via MCP.
 
-### elevenlabs-mcp
+### ElevenLabs MCP server
 
-Exposes tools for creating, configuring, and managing ElevenLabs conversational AI agents directly:
+Exposes tools for creating, configuring, and managing ElevenLabs conversational AI agents directly (server name: `ElevenLabs` in `.mcp.json`):
 
 **Agent Management:**
 - `mcp__elevenlabs__create_agent` — create a new agent (name, system prompt, voice, model, tools)
@@ -149,7 +157,7 @@ Exposes tools for creating, configuring, and managing ElevenLabs conversational 
 **Knowledge & Context:**
 - `mcp__elevenlabs__add_knowledge_base_to_agent` — attach a knowledge base to an agent
 
-Set `ELEVENLABS_API_KEY` in `.env`. Output files are written to `output-prompts/` for version control.
+Set `ELEVENLABS_API_KEY` in `.mcp.json` (copy from `.mcp.json.example`). Output files are written to `output-prompts/` for version control.
 
 **Key benefit**: Instead of manually copying prompts into the ElevenLabs Dashboard, `/generate-voice-workflow` can now deploy the agent directly via MCP — making the entire setup one-shot.
 

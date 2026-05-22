@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # ElevenLabs n8n Voice Agent
 
 Integrate ElevenLabs Conversational AI Voice Agents with n8n to build real-time, low-latency voice assistants that can execute complex workflows across your entire tech stack—no code required. 
@@ -144,16 +143,16 @@ Expect a response with available time slots.
 
 This project separates **MCP server routing** from **secrets**:
 
-1. Copy `.env.example` to `.env` and fill in your values (`.env` is never committed).
-2. MCP servers are defined in `mcp-config.json` using `${VAR}` placeholders that resolve from `.env`.
+1. Copy `.mcp.json.example` to `.mcp.json` and fill in your real API keys manually (`.mcp.json` is never committed — it is gitignored and claudeignored).
+2. MCP server configuration and credentials live exclusively in `.mcp.json` at the repo root.
 
-| Credential | When you need it |
-|---|---|
-| `N8N_MCP_TOKEN` + `N8N_MCP_URL` | **Required** for AI agents (Claude Code / Cursor) to deploy and edit workflows via MCP in real time |
-| `N8N_API_KEY` + `N8N_API_URL` | **Optional** — only if you run `npm run sync` / `core/scripts/sync.py` to pull workflow JSON from n8n into the repo |
-| `ELEVENLABS_API_KEY` | **Required** for ElevenLabs MCP tools (agent create/update, voices, calls) |
+| Credential | Where | When you need it |
+|---|---|---|
+| `N8N_HOST` + `N8N_API_KEY` | `.mcp.json` | **Required** for AI agents (Claude Code) to deploy and edit workflows via MCP in real time |
+| `N8N_API_KEY` + `N8N_API_URL` | env vars / scripts | **Optional** — only if you run `npm run sync` / `core/scripts/sync.py` to pull workflow JSON from n8n into the repo |
+| `ELEVENLABS_API_KEY` | `.mcp.json` | **Required** for ElevenLabs MCP tools (agent create/update, voices, calls) |
 
-The MCP token and the REST API key are different n8n credentials with different purposes; do not substitute one for the other.
+The `.mcp.json` key powers AI execution; the script key powers repository maintenance only. Never commit `.mcp.json`.
 
 ### Understanding the Directory Structure
 
@@ -181,7 +180,8 @@ va-n8n/
 │
 ├── package.json            # npm task runner
 ├── requirements.txt        # Python dependencies
-├── mcp-config.json         # MCP server config (env-var placeholders only)
+├── .mcp.json.example       # Safe MCP config scaffold with dummy values (tracked in git)
+├── .mcp.json               # Runtime MCP config with real keys (gitignored, claudeignored — never commit)
 ├── .env.example            # Template for .env setup (copy to .env locally)
 ├── CLAUDE.md               # Claude Code project instructions
 └── README.md               # This file
@@ -239,8 +239,8 @@ CI/CD will automatically validate JSON syntax and structure.
 
 ### Credential Management
 
-- Copy `.env.example` to `.env` for all local secrets; never commit `.env`
-- MCP URLs and auth shapes live in `mcp-config.json` with `${VAR}` references — no plaintext tokens in tracked files
+- Copy `.mcp.json.example` to `.mcp.json` and fill in real keys manually; never commit `.mcp.json`
+- `.mcp.json` is both gitignored and claudeignored — the AI cannot read it and must never attempt to
 - All actual API keys are stored in n8n's credential vault (not exported)
 - Exported JSONs contain only credential ID references
 - Before committing: run `npm run lint:configs` to ensure no raw secrets
@@ -317,4 +317,3 @@ MIT — Use freely in personal and commercial projects. Attribution appreciated 
 
 **Last Updated:** May 2026  
 **Status:** Production Ready (Customer Support template tested and live)
->>>>>>> 614f26a (second)
